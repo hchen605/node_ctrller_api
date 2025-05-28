@@ -7,13 +7,13 @@ import json
 sample_image = np.random.rand(1, 1, 28, 28).astype("float32").tolist()
 
 # 2) Controller URL
-url = "http://0.0.0.0:9000/predict"  # your controller’s FastAPI
+url = "http://0.0.0.0:9000/predict"  # your controller’s API
 
 # 3) Build payload
 payload = {"data": sample_image}
 
 # 4) Send request
-resp = requests.post(url, params={"worker": 2}, json=payload)
+resp = requests.post(url, params={"worker": 2}, json=payload) # to worker 2
 resp.raise_for_status()
 result = resp.json()
 # 5) Print the controller’s response
