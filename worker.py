@@ -9,7 +9,7 @@ PORT                 defaults to 5001
 MLFLOW_TRACKING_URI  defaults to "sqlite:///mlruns.db"
 """
 
-import os, numpy as np, uvicorn
+import os, time, numpy as np, uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 import mlflow.pytorch
@@ -49,14 +49,26 @@ def invocations(req: InvocationRequest):
     #arr   = np.asarray(req.inputs, dtype=np.float32)
     tensor_in = torch.tensor(req.inputs, dtype=torch.float32)
     #preds = model.predict(arr)            # returns logits
-    preds = model(tensor_in)
-    return preds.detach().cpu().numpy().tolist()                 # identical to mlflow serve
+
+    with torch.no_grad():
+        start_time = time.perf_counter()
+        preds = model(tensor_in)
+        end_time = time.perf_counter()
+
+    latency_ms = (end_time - start_time) * 1e3
+    #preds = model(tensor_in)
+
+    return {
+        "predictions": preds.detach().cpu().numpy().tolist(),    
+        "latency_ms":  latency_ms
+        }
 
 @app.get("/metrics")
 def metrics():
     return {"name": MODEL_NAME,
             "version": int(MODEL_VERSION),
             "val_accuracy": VAL_ACC}
+            #"latency_ms":  latency_ms}
 
 @app.get("/ping")
 def ping():
